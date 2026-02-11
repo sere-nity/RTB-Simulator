@@ -22,14 +22,14 @@ const TILES = [
     colorClass: 'border-orange-200 hover:border-orange-400 bg-orange-50 text-orange-600',
   },
   {
-    id: 'Rf',
+    id: 'G',
     label: (c) => {
       const enabled = c.geo_enabled || {}
       const regions = Object.keys(c.geo_factors || {}).filter((k) => enabled[k])
       return regions.length ? regions.join(', ') : '—'
     },
-    subtitle: 'Reach and Frequency',
-    symbol: 'Rf',
+    subtitle: 'Geo',
+    symbol: 'G',
     colorClass: 'border-sky-200 hover:border-sky-400 bg-sky-50 text-sky-600',
   },
   {

@@ -21,7 +21,7 @@ export default function TileModal({ tile, config, metrics, onClose, onSave }) {
   const handleSave = () => {
     if (tile === 'Bb') onSave({ base_bid: local.base_bid, max_bid: local.max_bid })
     else if (tile === 'Au') onSave({ audience_factors: local.audience_factors, audience_enabled: local.audience_enabled })
-    else if (tile === 'Rf' || tile === 'G') onSave({ geo_factors: local.geo_factors, geo_enabled: local.geo_enabled })
+    else if (tile === 'G') onSave({ geo_factors: local.geo_factors, geo_enabled: local.geo_enabled })
     else if (tile === 'K') onSave({ koa_enabled: local.koa_enabled })
   }
 
@@ -104,54 +104,36 @@ export default function TileModal({ tile, config, metrics, onClose, onSave }) {
           </>
         )}
 
-        {(tile === 'Rf' || tile === 'G') && (
+        {tile === 'G' && (
           <>
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-bold text-gray-900">Reach and Frequency</h3>
+              <h3 className="text-lg font-bold text-gray-900">Geography Targeting</h3>
               <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="px-6 py-6 space-y-6">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cumulative unique households</p>
-                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto text-xs border border-gray-200 rounded p-2 bg-gray-50">
-                  {[
-                    [1, 43.28], [2, 58.45], [3, 66.94], [4, 71.81], [5, 75.43], [6, 78.12], [7, 80.34],
-                    [8, 82.19], [9, 83.76], [10, 85.11], [11, 86.28], [12, 87.31], [13, 88.22], [14, 89.02], [15, 92.09],
-                  ].map(([freq, pct]) => (
-                    <div key={freq} className="flex justify-between">
-                      <span className="text-gray-600">Freq {freq}</span>
-                      <span className="font-medium text-gray-900">{pct}%</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Reach curve (demo). Bid scaling by region below affects auction.</p>
-              </div>
-              <div className="border-t border-gray-200 pt-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">Regional targeting (bid multiplier by region)</p>
-                {Object.entries(local.geo_factors || {}).map(([region, factor]) => (
-                  <div key={region} className="flex items-center justify-between gap-4 mb-2">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={local.geo_enabled[region]}
-                        onChange={(e) => setLocal((l) => ({ ...l, geo_enabled: { ...l.geo_enabled, [region]: e.target.checked } }))}
-                      />
-                      <span className="text-sm font-medium text-gray-700">{region}</span>
-                    </label>
+            <div className="px-6 py-6 space-y-4">
+              {Object.entries(local.geo_factors || {}).map(([region, factor]) => (
+                <div key={region} className="flex items-center justify-between gap-4">
+                  <label className="flex items-center gap-2">
                     <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={factor}
-                      onChange={(e) => setLocal((l) => ({ ...l, geo_factors: { ...l.geo_factors, [region]: Number(e.target.value) } }))}
-                      className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                      type="checkbox"
+                      checked={local.geo_enabled[region]}
+                      onChange={(e) => setLocal((l) => ({ ...l, geo_enabled: { ...l.geo_enabled, [region]: e.target.checked } }))}
                     />
-                    <span className="text-gray-500">×</span>
-                  </div>
-                ))}
-              </div>
+                    <span className="text-sm font-medium text-gray-700">{region}</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={factor}
+                    onChange={(e) => setLocal((l) => ({ ...l, geo_factors: { ...l.geo_factors, [region]: Number(e.target.value) } }))}
+                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                  />
+                  <span className="text-gray-500">×</span>
+                </div>
+              ))}
             </div>
           </>
         )}
