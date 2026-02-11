@@ -1,13 +1,117 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 
+// Demo distribution: "Similar Ad Groups" % per max bid bucket ($0, $5, $10, ... $40)
+const MAX_BID_BUCKETS = [0, 5, 10, 15, 20, 25, 30, 35, 40]
+const SIMILAR_GROUPS_PCT = [5, 18, 35, 22, 10, 5, 3, 2] // percentages per bucket
+
+function BbBidModal({ local, setLocal, onClose }) {
+  const maxBid = local.max_bid
+  const baseBid = local.base_bid
+  const maxBidCap = 40
+
+  const setMaxBid = (v) => {
+    const val = Math.max(1, Math.min(maxBidCap, v))
+    setLocal((l) => ({
+      ...l,
+      max_bid: val,
+      base_bid: Math.min(l.base_bid, val),
+    }))
+  }
+  const setBaseBid = (v) => {
+    const val = Math.max(0.5, Math.min(maxBid, v))
+    setLocal((l) => ({ ...l, base_bid: val }))
+  }
+
+  const highlightBar = (() => {
+    const i = MAX_BID_BUCKETS.findIndex((b) => b >= maxBid)
+    return i >= 0 ? i : MAX_BID_BUCKETS.length - 1
+  })()
+
+  const competitiveness = maxBid < 5 ? 'NOT COMPETITIVE' : maxBid < 15 ? 'MODERATELY COMPETITIVE' : 'HIGHLY COMPETITIVE'
+
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <h3 className="text-lg font-bold text-gray-900">Bid Settings</h3>
+        <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="px-6 py-6 space-y-6">
+        {/* Max Bid – similar ad groups distribution + slider */}
+        <div>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Similar Ad Groups (%)</p>
+          <div className="flex items-end gap-0.5 h-16 mb-1" aria-hidden>
+            {MAX_BID_BUCKETS.map((bucket, i) => (
+              <div
+                key={bucket}
+                className={`flex-1 min-w-0 rounded-t transition-colors ${
+                  i === highlightBar ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+                style={{ height: `${SIMILAR_GROUPS_PCT[i]}%` }}
+                title={`$${bucket}: ${SIMILAR_GROUPS_PCT[i]}%`}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mb-2">MAX BID ($)</p>
+          <div className="relative pt-6">
+            <input
+              type="range"
+              min="1"
+              max={maxBidCap}
+              step="0.5"
+              value={maxBid}
+              onChange={(e) => setMaxBid(parseFloat(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+            <div
+              className="absolute -top-1 text-sm font-semibold text-gray-800 bg-gray-100 px-2 py-0.5 rounded shadow border border-gray-200 pointer-events-none"
+              style={{ left: `${((maxBid - 1) / (maxBidCap - 1)) * 100}%`, transform: 'translateX(-50%)' }}
+            >
+              ${Number(maxBid).toFixed(0)}
+            </div>
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-gray-500">
+            <span>NOT COMPETITIVE</span>
+            <span>MODERATELY COMPETITIVE</span>
+            <span>HIGHLY COMPETITIVE</span>
+          </div>
+          <p className="text-sm text-gray-600 mt-1 font-medium">{competitiveness}</p>
+        </div>
+
+        {/* Base Bid – constrained to ≤ max bid */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Base Bid: ${baseBid.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min="0.5"
+            max={Math.max(0.5, maxBid)}
+            step="0.1"
+            value={baseBid}
+            onChange={(e) => setBaseBid(parseFloat(e.target.value))}
+            className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            Starting bid before audience and geo multipliers. Must be ≤ max bid.
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function TileModal({ tile, config, metrics, onClose, onSave }) {
   const [local, setLocal] = useState(null)
 
   useEffect(() => {
+    const base = config.base_bid ?? 2
+    const max = config.max_bid ?? 5
     setLocal({
-      base_bid: config.base_bid,
-      max_bid: config.max_bid,
+      base_bid: Math.min(base, max),
+      max_bid: max,
       audience_factors: { ...(config.audience_factors || {}) },
       audience_enabled: { ...(config.audience_enabled || {}) },
       geo_factors: { ...(config.geo_factors || {}) },
@@ -19,7 +123,11 @@ export default function TileModal({ tile, config, metrics, onClose, onSave }) {
   if (!local) return null
 
   const handleSave = () => {
-    if (tile === 'Bb') onSave({ base_bid: local.base_bid, max_bid: local.max_bid })
+    if (tile === 'Bb') {
+      const base = Math.min(local.base_bid, local.max_bid)
+      const max = local.max_bid
+      onSave({ base_bid: base, max_bid: max })
+    }
     else if (tile === 'Au') onSave({ audience_factors: local.audience_factors, audience_enabled: local.audience_enabled })
     else if (tile === 'G') onSave({ geo_factors: local.geo_factors, geo_enabled: local.geo_enabled })
     else if (tile === 'K') onSave({ koa_enabled: local.koa_enabled })
@@ -29,42 +137,11 @@ export default function TileModal({ tile, config, metrics, onClose, onSave }) {
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         {tile === 'Bb' && (
-          <>
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-bold text-gray-900">Base Bid Settings</h3>
-              <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 py-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Base Bid: ${local.base_bid.toFixed(2)}</label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="10"
-                  step="0.1"
-                  value={local.base_bid}
-                  onChange={(e) => setLocal((l) => ({ ...l, base_bid: parseFloat(e.target.value) }))}
-                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Max Bid:</label>
-                <input
-                  type="number"
-                  value={local.max_bid}
-                  onChange={(e) => setLocal((l) => ({ ...l, max_bid: parseFloat(e.target.value) }))}
-                  step="0.5"
-                  min="1"
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                />
-              </div>
-              <div className="bg-gray-50 rounded p-4 text-sm text-gray-600">
-                This is your starting bid before audience and geo multipliers are applied.
-              </div>
-            </div>
-          </>
+          <BbBidModal
+            local={local}
+            setLocal={setLocal}
+            onClose={onClose}
+          />
         )}
 
         {tile === 'Au' && (

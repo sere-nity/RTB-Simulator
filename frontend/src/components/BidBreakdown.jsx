@@ -14,7 +14,6 @@ export default function BidBreakdown({ lastMessage, config }) {
   const bidCalc = lastMessage.bid_calculation || {}
   const koa = lastMessage.koa || {}
   const value = bidCalc.calculated_value ?? 0
-  const confidence = koa.confidence ?? 0
 
   return (
     <div className="border border-gray-200 rounded-lg p-6">
@@ -54,18 +53,8 @@ export default function BidBreakdown({ lastMessage, config }) {
             <Brain className="w-5 h-5 text-purple-600" />
             <span className="font-semibold text-purple-900">Koa Optimization:</span>
           </div>
-          <div className="text-sm text-gray-700 mb-3 space-y-1">
+          <div className="text-sm text-gray-700 space-y-1">
             <p className="italic">&quot;{koa.explanation || '—'}&quot;</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">Confidence:</span>
-            <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
-              <div
-                className="bg-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `${confidence}%` }}
-              />
-            </div>
-            <span className="font-semibold text-gray-900">{confidence}%</span>
           </div>
         </div>
       )}

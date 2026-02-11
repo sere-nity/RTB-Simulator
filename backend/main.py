@@ -32,7 +32,7 @@ metrics = {
 }
 
 
-def _build_forecast(metrics, koa_confidence, request_segments_count):
+def _build_forecast(metrics, request_segments_count):
     """Build forecast support payload for the banner."""
     budget = campaign_meta["budget"]
     spent = campaign_meta["spent"]
@@ -42,9 +42,9 @@ def _build_forecast(metrics, koa_confidence, request_segments_count):
     elapsed = days_total - days_left
     rate = spent / max(1, elapsed) if elapsed else 0
     forecasted_spend = round(spent + rate * days_left, 2)
-    # Decision power: 0–1 from win rate, capped
+    # Decision power: 0–1 from win rate
     win_rate = metrics["wins"] / metrics["auctions"] if metrics["auctions"] > 0 else 0
-    decision_power_fill = min(1.0, (win_rate + (koa_confidence or 0) / 100) / 2)
+    decision_power_fill = min(1.0, win_rate)
     decision_power_score = min(10, max(1, round(decision_power_fill * 10)))
     # Relevance: 1–10 from segment match count (more segments = higher relevance)
     relevance = min(10, max(1, (request_segments_count or 1) * 2))
@@ -83,7 +83,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
             forecast = _build_forecast(
                 metrics,
-                koa_result.get("confidence"),
                 len(request.get("segments", [])),
             )
 

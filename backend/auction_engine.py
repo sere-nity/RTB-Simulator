@@ -66,7 +66,6 @@ def apply_koa(calculated_value: float, config: dict[str, Any]) -> dict[str, Any]
             "explanation": "Koa is OFF. Bidding full calculated value.",
             "savings": 0,
             "predicted_clearing": None,
-            "confidence": 0,
         }
 
     # Predict clearing price (rolling average + noise)
@@ -84,8 +83,6 @@ def apply_koa(calculated_value: float, config: dict[str, Any]) -> dict[str, Any]
 
     savings = round(calculated_value - smart_bid, 2)
 
-    confidence = min(95, 50 + len(recent_clearings) * 3)
-
     explanation = (
         f"Predicted clearing: ${predicted_clearing:.2f}. "
         f"Bidding ${smart_bid:.2f} to win while saving ${savings:.2f} per impression."
@@ -96,7 +93,6 @@ def apply_koa(calculated_value: float, config: dict[str, Any]) -> dict[str, Any]
         "predicted_clearing": predicted_clearing,
         "final_bid": smart_bid,
         "savings": savings,
-        "confidence": confidence,
         "explanation": explanation,
     }
 
