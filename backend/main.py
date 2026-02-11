@@ -32,6 +32,34 @@ metrics = {
 }
 
 
+def _build_forecast(metrics, koa_confidence, request_segments_count):
+    """Build forecast support payload for the banner."""
+    budget = campaign_meta["budget"]
+    spent = campaign_meta["spent"]
+    days_left = campaign_meta.get("days_left", 21)
+    days_total = campaign_meta.get("days_total", 60)
+    # Extrapolate: assume similar spend rate over remaining days
+    elapsed = days_total - days_left
+    rate = spent / max(1, elapsed) if elapsed else 0
+    forecasted_spend = round(spent + rate * days_left, 2)
+    # Decision power: 0–1 from win rate, capped
+    win_rate = metrics["wins"] / metrics["auctions"] if metrics["auctions"] > 0 else 0
+    decision_power_fill = min(1.0, (win_rate + (koa_confidence or 0) / 100) / 2)
+    decision_power_score = min(10, max(1, round(decision_power_fill * 10)))
+    # Relevance: 1–10 from segment match count (more segments = higher relevance)
+    relevance = min(10, max(1, (request_segments_count or 1) * 2))
+    return {
+        "budget": budget,
+        "spent": round(spent, 2),
+        "forecasted_spend": forecasted_spend,
+        "days_left": days_left,
+        "days_total": days_total,
+        "decision_power_fill": round(decision_power_fill, 2),
+        "decision_power_score": decision_power_score,
+        "relevance": relevance,
+    }
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global metrics
@@ -48,6 +76,16 @@ async def websocket_endpoint(websocket: WebSocket):
             if auction_result["won"]:
                 metrics["wins"] += 1
                 metrics["total_savings"] += koa_result["savings"]
+                # Track spend: we pay the clearing (floor) price on win
+                clearing = auction_result.get("clearing_price")
+                if clearing is not None:
+                    campaign_meta["spent"] = campaign_meta.get("spent", 0) + clearing
+
+            forecast = _build_forecast(
+                metrics,
+                koa_result.get("confidence"),
+                len(request.get("segments", [])),
+            )
 
             result = {
                 "auction_id": request["id"],
@@ -63,6 +101,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "total_savings": round(metrics["total_savings"], 2),
                     "avg_savings": round(metrics["total_savings"] / metrics["wins"], 2) if metrics["wins"] > 0 else 0,
                 },
+                "forecast": forecast,
             }
 
             await websocket.send_json(result)

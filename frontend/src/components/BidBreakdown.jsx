@@ -1,9 +1,11 @@
-export default function BidBreakdown({ lastMessage }) {
+import { Brain } from 'lucide-react'
+
+export default function BidBreakdown({ lastMessage, config }) {
   if (!lastMessage) {
     return (
-      <div className="bid-breakdown">
-        <p>Current Auction: —</p>
-        <p className="muted">Connect to see live bid breakdown.</p>
+      <div className="border border-gray-200 rounded-lg p-6">
+        <h3 className="font-bold text-gray-900 mb-4">Bid Breakdown</h3>
+        <p className="text-gray-500 text-center py-8">Waiting for auction data...</p>
       </div>
     )
   }
@@ -11,32 +13,62 @@ export default function BidBreakdown({ lastMessage }) {
   const req = lastMessage.request || {}
   const bidCalc = lastMessage.bid_calculation || {}
   const koa = lastMessage.koa || {}
-
-  const value = bidCalc.calculated_value
-  const bid = koa.final_bid ?? value
+  const value = bidCalc.calculated_value ?? 0
+  const confidence = koa.confidence ?? 0
 
   return (
-    <div className="bid-breakdown">
-      <p className="current-auction">
-        Current Auction: #{lastMessage.auction_id?.replace('req_', '') ?? '—'} {req.site ?? ''}
-      </p>
-      <div className="breakdown-lines">
-        <div>Base Bid &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${(bidCalc.base_bid ?? 0).toFixed(2)}</div>
-        {(bidCalc.audience_breakdown || []).map((a) => (
-          <div key={a.segment}>× Audience ({a.segment}) &nbsp; {a.factor}×</div>
-        ))}
-        <div>× Geography ({bidCalc.geo}) &nbsp; {bidCalc.geo_factor}×</div>
+    <div className="border border-gray-200 rounded-lg p-6">
+      <h3 className="font-bold text-gray-900 mb-4">Bid Breakdown</h3>
+      <div className="mb-4">
+        <div className="text-sm font-semibold text-gray-700 mb-2">
+          Current Auction: #{lastMessage.auction_id?.replace('req_', '') ?? '—'} {req.site ?? ''}
+        </div>
       </div>
-      <div className="breakdown-sep">─────────────────────────────────</div>
-      <div className="breakdown-value">Calculated Value &nbsp;&nbsp; ${(value ?? 0).toFixed(2)}</div>
 
-      <div className="koa-section">
-        <p className="koa-label">🧠 Koa Optimization:</p>
-        <p className="koa-explanation">&quot;{koa.explanation || '—'}&quot;</p>
-        {koa.enabled && koa.confidence != null && (
-          <p className="koa-confidence">Confidence: {koa.confidence}%</p>
-        )}
+      <div className="space-y-2 mb-4 bg-gray-50 p-4 rounded">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-700">Base Bid</span>
+          <span className="font-semibold text-gray-900">${(bidCalc.base_bid ?? 0).toFixed(2)}</span>
+        </div>
+        {(bidCalc.audience_breakdown || []).map((a) => (
+          <div key={a.segment} className="flex justify-between text-sm pl-4">
+            <span className="text-gray-600">× Audience ({a.segment})</span>
+            <span className="text-gray-700">{a.factor}x</span>
+          </div>
+        ))}
+        <div className="flex justify-between text-sm pl-4">
+          <span className="text-gray-600">× Geography ({bidCalc.geo})</span>
+          <span className="text-gray-700">{bidCalc.geo_factor}x</span>
+        </div>
+        <div className="border-t border-gray-300 pt-2 mt-2">
+          <div className="flex justify-between text-sm font-semibold">
+            <span className="text-gray-700">Calculated Value</span>
+            <span className="text-gray-900">${value.toFixed(2)}</span>
+          </div>
+        </div>
       </div>
+
+      {(config?.koa_enabled && koa) && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Brain className="w-5 h-5 text-purple-600" />
+            <span className="font-semibold text-purple-900">Koa Optimization:</span>
+          </div>
+          <div className="text-sm text-gray-700 mb-3 space-y-1">
+            <p className="italic">&quot;{koa.explanation || '—'}&quot;</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-600">Confidence:</span>
+            <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
+              <div
+                className="bg-purple-600 h-2 rounded-full transition-all"
+                style={{ width: `${confidence}%` }}
+              />
+            </div>
+            <span className="font-semibold text-gray-900">{confidence}%</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

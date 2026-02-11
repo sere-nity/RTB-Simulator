@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import CampaignHeader from './components/CampaignHeader'
+import ForecastSupport from './components/ForecastSupport'
 import TileGrid from './components/TileGrid'
 import AuctionFeed from './components/AuctionFeed'
 import BidBreakdown from './components/BidBreakdown'
@@ -26,7 +27,7 @@ async function updateConfig(patch) {
 }
 
 export default function App() {
-  const { lastMessage, metrics, feed, connected } = useWebSocket()
+  const { lastMessage, metrics, forecast, feed, connected } = useWebSocket()
   const [config, setConfig] = useState(null)
   const [modalTile, setModalTile] = useState(null)
 
@@ -45,47 +46,38 @@ export default function App() {
 
   if (!config) {
     return (
-      <div className="app-loading">
-        <span>Loading campaign config…</span>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <span className="text-gray-500">Loading campaign config…</span>
       </div>
     )
   }
 
   return (
-    <div className="app">
-      <CampaignHeader
-        name={config.meta?.name ?? 'Campaign'}
-        budget={config.meta?.budget ?? 1000}
-        spent={config.meta?.spent ?? 0}
-        live={connected}
-      />
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        <CampaignHeader live={connected} />
 
-      <main className="app-main">
-        <div className="left-column">
-          <section className="panel campaign-config">
-            <h2>CAMPAIGN CONFIG</h2>
-            <TileGrid
-              config={config}
-              onTileClick={setModalTile}
-            />
-            <p className="config-hint">(click any tile to configure)</p>
-          </section>
-          <section className="panel bid-breakdown-panel">
-            <h2>BID BREAKDOWN</h2>
-            <BidBreakdown lastMessage={lastMessage} />
-          </section>
+        <ForecastSupport forecast={forecast} configMeta={config.meta} />
+
+        <div className="bg-white rounded-b-lg border border-gray-200 border-t-0 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <TileGrid
+                config={{
+                  ...config,
+                  meta: forecast ? { ...config.meta, spent: forecast.spent } : config.meta,
+                }}
+                onTileClick={setModalTile}
+              />
+              <BidBreakdown lastMessage={lastMessage} config={config} />
+            </div>
+            <div className="space-y-6">
+              <AuctionFeed feed={feed} />
+              <Metrics metrics={metrics} />
+            </div>
+          </div>
         </div>
-        <div className="right-column">
-          <section className="panel auction-feed-panel">
-            <h2>LIVE AUCTION FEED</h2>
-            <AuctionFeed feed={feed} />
-          </section>
-          <section className="panel metrics-panel-wrap">
-            <h2>METRICS</h2>
-            <Metrics metrics={metrics} />
-          </section>
-        </div>
-      </main>
+      </div>
 
       {modalTile && (
         <TileModal

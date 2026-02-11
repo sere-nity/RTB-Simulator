@@ -14,6 +14,7 @@ export function useWebSocket() {
     total_savings: 0,
     avg_savings: 0,
   })
+  const [forecast, setForecast] = useState(null)
   const [feed, setFeed] = useState([])
   const [connected, setConnected] = useState(false)
   const wsRef = useRef(null)
@@ -34,6 +35,7 @@ export function useWebSocket() {
         const data = JSON.parse(event.data)
         setLastMessage(data)
         if (data.metrics) setMetrics(data.metrics)
+        if (data.forecast) setForecast(data.forecast)
         setFeed((prev) => [data, ...prev].slice(0, 50))
       } catch (_) {}
     }
@@ -52,5 +54,5 @@ export function useWebSocket() {
     }
   }, [connect])
 
-  return { lastMessage, metrics, feed, connected }
+  return { lastMessage, metrics, forecast, feed, connected }
 }

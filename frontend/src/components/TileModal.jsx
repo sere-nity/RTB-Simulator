@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { X } from 'lucide-react'
 
 export default function TileModal({ tile, config, metrics, onClose, onSave }) {
   const [local, setLocal] = useState(null)
@@ -18,84 +19,136 @@ export default function TileModal({ tile, config, metrics, onClose, onSave }) {
   if (!local) return null
 
   const handleSave = () => {
-    if (tile === 'Bb') {
-      onSave({ base_bid: local.base_bid, max_bid: local.max_bid })
-    } else if (tile === 'Au') {
-      onSave({
-        audience_factors: local.audience_factors,
-        audience_enabled: local.audience_enabled,
-      })
-    } else if (tile === 'G') {
-      onSave({
-        geo_factors: local.geo_factors,
-        geo_enabled: local.geo_enabled,
-      })
-    } else if (tile === 'K') {
-      onSave({ koa_enabled: local.koa_enabled })
-    }
+    if (tile === 'Bb') onSave({ base_bid: local.base_bid, max_bid: local.max_bid })
+    else if (tile === 'Au') onSave({ audience_factors: local.audience_factors, audience_enabled: local.audience_enabled })
+    else if (tile === 'Rf' || tile === 'G') onSave({ geo_factors: local.geo_factors, geo_enabled: local.geo_enabled })
+    else if (tile === 'K') onSave({ koa_enabled: local.koa_enabled })
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         {tile === 'Bb' && (
           <>
-            <div className="modal-header">
-              <h3>Base Bid Settings</h3>
-              <button type="button" className="modal-close" onClick={onClose}>×</button>
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Base Bid Settings</h3>
+              <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="modal-body">
-              <label>
-                Base Bid: <input type="number" step="0.01" min="0" value={local.base_bid} onChange={(e) => setLocal((l) => ({ ...l, base_bid: Number(e.target.value) }))} />
-              </label>
-              <label>
-                Max Bid: <input type="number" step="0.01" min="0" value={local.max_bid} onChange={(e) => setLocal((l) => ({ ...l, max_bid: Number(e.target.value) }))} />
-              </label>
-              <p className="modal-desc">This is your starting bid before audience and geo multipliers are applied.</p>
+            <div className="px-6 py-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Base Bid: ${local.base_bid.toFixed(2)}</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="10"
+                  step="0.1"
+                  value={local.base_bid}
+                  onChange={(e) => setLocal((l) => ({ ...l, base_bid: parseFloat(e.target.value) }))}
+                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Bid:</label>
+                <input
+                  type="number"
+                  value={local.max_bid}
+                  onChange={(e) => setLocal((l) => ({ ...l, max_bid: parseFloat(e.target.value) }))}
+                  step="0.5"
+                  min="1"
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                />
+              </div>
+              <div className="bg-gray-50 rounded p-4 text-sm text-gray-600">
+                This is your starting bid before audience and geo multipliers are applied.
+              </div>
             </div>
           </>
         )}
 
         {tile === 'Au' && (
           <>
-            <div className="modal-header">
-              <h3>Audience Targeting</h3>
-              <button type="button" className="modal-close" onClick={onClose}>×</button>
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Audience Targeting</h3>
+              <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="modal-body">
-              <div className="audience-rows">
-                {Object.entries(local.audience_factors || {}).map(([seg, factor]) => (
-                  <div key={seg} className="audience-row">
-                    <label>
-                      <input type="checkbox" checked={local.audience_enabled[seg]} onChange={(e) => setLocal((l) => ({ ...l, audience_enabled: { ...l.audience_enabled, [seg]: e.target.checked } }))} />
-                      {seg}
-                    </label>
-                    <input type="number" step="0.1" min="0" value={factor} onChange={(e) => setLocal((l) => ({ ...l, audience_factors: { ...l.audience_factors, [seg]: Number(e.target.value) } }))} />
-                    <span>×</span>
-                  </div>
-                ))}
-              </div>
-              <p className="combined-mult">Combined multiplier: {Object.keys(local.audience_factors || {}).reduce((m, k) => (local.audience_enabled[k] ? m * local.audience_factors[k] : m), 1).toFixed(1)}×</p>
+            <div className="px-6 py-6 space-y-4">
+              {Object.entries(local.audience_factors || {}).map(([seg, factor]) => (
+                <div key={seg} className="flex items-center justify-between gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={local.audience_enabled[seg]}
+                      onChange={(e) => setLocal((l) => ({ ...l, audience_enabled: { ...l.audience_enabled, [seg]: e.target.checked } }))}
+                    />
+                    <span className="text-sm font-medium text-gray-700">{seg}</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={factor}
+                    onChange={(e) => setLocal((l) => ({ ...l, audience_factors: { ...l.audience_factors, [seg]: Number(e.target.value) } }))}
+                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                  />
+                  <span className="text-gray-500">×</span>
+                </div>
+              ))}
+              <p className="text-sm font-semibold text-gray-700">
+                Combined multiplier: {Object.keys(local.audience_factors || {}).reduce((m, k) => (local.audience_enabled[k] ? m * local.audience_factors[k] : m), 1).toFixed(1)}×
+              </p>
             </div>
           </>
         )}
 
-        {tile === 'G' && (
+        {(tile === 'Rf' || tile === 'G') && (
           <>
-            <div className="modal-header">
-              <h3>Geography Targeting</h3>
-              <button type="button" className="modal-close" onClick={onClose}>×</button>
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Reach and Frequency</h3>
+              <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="modal-body">
-              <div className="geo-rows">
+            <div className="px-6 py-6 space-y-6">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cumulative unique households</p>
+                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto text-xs border border-gray-200 rounded p-2 bg-gray-50">
+                  {[
+                    [1, 43.28], [2, 58.45], [3, 66.94], [4, 71.81], [5, 75.43], [6, 78.12], [7, 80.34],
+                    [8, 82.19], [9, 83.76], [10, 85.11], [11, 86.28], [12, 87.31], [13, 88.22], [14, 89.02], [15, 92.09],
+                  ].map(([freq, pct]) => (
+                    <div key={freq} className="flex justify-between">
+                      <span className="text-gray-600">Freq {freq}</span>
+                      <span className="font-medium text-gray-900">{pct}%</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Reach curve (demo). Bid scaling by region below affects auction.</p>
+              </div>
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">Regional targeting (bid multiplier by region)</p>
                 {Object.entries(local.geo_factors || {}).map(([region, factor]) => (
-                  <div key={region} className="geo-row">
-                    <label>
-                      <input type="checkbox" checked={local.geo_enabled[region]} onChange={(e) => setLocal((l) => ({ ...l, geo_enabled: { ...l.geo_enabled, [region]: e.target.checked } }))} />
-                      {region}
+                  <div key={region} className="flex items-center justify-between gap-4 mb-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={local.geo_enabled[region]}
+                        onChange={(e) => setLocal((l) => ({ ...l, geo_enabled: { ...l.geo_enabled, [region]: e.target.checked } }))}
+                      />
+                      <span className="text-sm font-medium text-gray-700">{region}</span>
                     </label>
-                    <input type="number" step="0.1" min="0" value={factor} onChange={(e) => setLocal((l) => ({ ...l, geo_factors: { ...l.geo_factors, [region]: Number(e.target.value) } }))} />
-                    <span>×</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={factor}
+                      onChange={(e) => setLocal((l) => ({ ...l, geo_factors: { ...l.geo_factors, [region]: Number(e.target.value) } }))}
+                      className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                    />
+                    <span className="text-gray-500">×</span>
                   </div>
                 ))}
               </div>
@@ -105,29 +158,49 @@ export default function TileModal({ tile, config, metrics, onClose, onSave }) {
 
         {tile === 'K' && (
           <>
-            <div className="modal-header">
-              <h3>Koa AI Optimization</h3>
-              <button type="button" className="modal-close" onClick={onClose}>×</button>
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Koa AI Optimization</h3>
+              <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="modal-body">
-              <div className="koa-toggle">
-                <span>Koa Status:</span>
-                <button type="button" className={local.koa_enabled ? 'toggle on' : 'toggle'} onClick={() => setLocal((l) => ({ ...l, koa_enabled: true }))}>ON 🟢</button>
-                <button type="button" className={!local.koa_enabled ? 'toggle off' : 'toggle'} onClick={() => setLocal((l) => ({ ...l, koa_enabled: false }))}>OFF ⚪</button>
+            <div className="px-6 py-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Koa Status:</span>
+                <button
+                  type="button"
+                  onClick={() => setLocal((l) => ({ ...l, koa_enabled: true }))}
+                  className={`px-4 py-2 rounded font-medium text-sm ${local.koa_enabled ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}`}
+                >
+                  ON
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocal((l) => ({ ...l, koa_enabled: false }))}
+                  className={`px-4 py-2 rounded font-medium text-sm ${!local.koa_enabled ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-600'}`}
+                >
+                  OFF
+                </button>
               </div>
-              <p>When ON, Koa will:</p>
-              <ul>
+              <p className="text-sm text-gray-600">When ON, Koa will:</p>
+              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
                 <li>Predict auction clearing prices</li>
                 <li>Bid just enough to win</li>
                 <li>Save budget while maintaining wins</li>
               </ul>
-              <p className="current-savings">Current savings: ${(metrics?.total_savings ?? 0).toFixed(2)}</p>
+              <p className="text-sm font-semibold text-gray-900">Current savings: ${(metrics?.total_savings ?? 0).toFixed(2)}</p>
             </div>
           </>
         )}
 
-        <div className="modal-footer">
-          <button type="button" className="btn-save" onClick={handleSave}>Save</button>
+        <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-medium"
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>

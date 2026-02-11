@@ -32,4 +32,6 @@ CAMPAIGN_META = {
     "name": "Holiday Shopping",
     "budget": 1000,
     "spent": 0,
+    "days_total": 60,
+    "days_left": 21,
 }
