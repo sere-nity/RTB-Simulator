@@ -35,7 +35,7 @@ const TILES = [
   {
     id: 'K',
     label: (c) => (c.koa_enabled ? 'ON' : 'OFF'),
-    subtitle: 'Koa AI',
+    subtitle: 'AI Optimization',
     symbol: 'K',
     colorClass: 'border-gray-300 hover:border-gray-400 bg-gray-100 text-gray-700',
   },

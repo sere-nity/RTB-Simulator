@@ -51,7 +51,7 @@ export default function BidBreakdown({ lastMessage, config }) {
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <Brain className="w-5 h-5 text-purple-600" />
-            <span className="font-semibold text-purple-900">Koa Optimization:</span>
+            <span className="font-semibold text-purple-900">AI Optimization:</span>
           </div>
           <div className="text-sm text-gray-700 space-y-1">
             <p className="italic">&quot;{koa.explanation || '—'}&quot;</p>

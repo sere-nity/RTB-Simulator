@@ -16,7 +16,7 @@ export default function CampaignHeader({ live }) {
         </div>
       </div>
       <div className="bg-white px-6 py-2 border-b border-gray-200">
-        <p className="text-sm text-gray-600">Demonstrating The Trade Desk&apos;s Kokai bidding system</p>
+        <p className="text-sm text-gray-600">The Trade Desk Bidding Project</p>
       </div>
     </>
   )
